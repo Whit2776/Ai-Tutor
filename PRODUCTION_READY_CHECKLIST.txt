@@ -1,0 +1,100 @@
+AI Slide Teacher - Production Readiness Checklist
+Location: project root (same folder as manage.py)
+
+1) Security settings (must do)
+- Move SECRET_KEY to environment variable.
+  - In settings.py, replace hardcoded key with:
+    SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+- Set DEBUG=False in production.
+  - Example:
+    DEBUG = os.getenv("DEBUG", "False").lower() == "true"
+- Set ALLOWED_HOSTS to your real domains.
+  - Example env:
+    ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
+- Enable HTTPS security settings:
+  - SECURE_SSL_REDIRECT=True
+  - SESSION_COOKIE_SECURE=True
+  - CSRF_COOKIE_SECURE=True
+  - SECURE_HSTS_SECONDS=31536000
+  - SECURE_HSTS_INCLUDE_SUBDOMAINS=True
+  - SECURE_HSTS_PRELOAD=True
+  - SECURE_PROXY_SSL_HEADER=("HTTP_X_FORWARDED_PROTO", "https")  (if behind proxy/load balancer)
+
+2) Environment variables (must set in hosting platform)
+- DJANGO_SECRET_KEY=<strong-random-secret>
+- DEBUG=False
+- ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
+- DATABASE_URL=<your production postgres/mysql url>
+- BREVO_API_KEY=<your brevo api key>
+- DEFAULT_FROM_EMAIL=<verified sender email in Brevo>
+- COMPANY_NAME=STRIVE (or your brand name)
+
+3) Fix backend code issues before deploy
+- Fix login API URL binding:
+  - login/api/urls.py currently points 'login' to views.login.
+  - It must point to views.log_in.
+- Harden set-password API:
+  - In login/api/views.py set_password(), reject token if:
+    - email_link.used is True
+    - email_link.is_expired is True
+    - optional: expiry_date < now
+- Make logout safe:
+  - In log_out(), replace direct delete with:
+    request.session.pop("person_id", None)
+
+4) Frontend/auth flow fixes
+- login/templates/login.html
+  - Remove external action URL (currently posts to aizox.vercel.app).
+  - Post to your local API endpoint (/auth-api/login).
+  - Align fields with API:
+    - API expects user_name + password (not email + password), or change API to accept email.
+- login/templates/sign-up.html
+  - Add {% csrf_token %} in the form or exempt API endpoint if intentionally stateless.
+  - Ensure successful response redirects user to returned redirect_url.
+- Validate final set-password redirect path in template JS and backend response.
+
+5) Data model and migration hygiene
+- Run:
+  - python manage.py makemigrations
+  - python manage.py migrate
+- Confirm no missing migrations:
+  - python manage.py showmigrations
+- app_1 and chat currently have no migrations; add if models are introduced.
+
+6) Static files
+- Keep WhiteNoise enabled (already present).
+- Run collectstatic during build/deploy:
+  - python manage.py collectstatic --noinput
+- Confirm static assets load on production domain.
+
+7) Server process/deploy config
+- Procfile must define:
+  - web process (gunicorn)
+  - release process (migrations)
+- Example provided in Procfile in this repo.
+
+8) Health and smoke tests before launch
+- Run:
+  - python manage.py check
+  - python manage.py check --deploy
+- Manually verify:
+  - Sign-up creates Person + Email_Link
+  - Brevo email sends with valid set-password link
+  - Set-password works once and blocks reused token
+  - Login creates session, protected page loads
+  - Logout clears session
+
+9) Operational basics
+- Set up application logs and error monitoring (Sentry or platform logs).
+- Backup policy for production DB.
+- Limit admin access and rotate secrets periodically.
+- Turn off or remove debug/print statements in production paths.
+
+10) Go-live sequence
+1. Set env vars in hosting platform.
+2. Deploy code.
+3. Run release command (migrations).
+4. Validate static files.
+5. Run full auth flow smoke test.
+6. Switch DNS / expose production URL.
+

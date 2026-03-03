@@ -51,8 +51,9 @@
         <div id="page" class="">
             <div class="login-wrap">
                 <div class="content">
-                    <form class="form-login" action="https://aizox.vercel.app/index.html">
+                    <form id='login-form' class="form-login" action="https://aizox.vercel.app/index.html">
                         <h3>Login</h3>
+                        {% csrf_token %}
                         <div class="d-grid gap16">
                             <a href="index-2.html" class="tf-btn-4">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -140,6 +141,17 @@
     <script src="{% get_static_prefix %}js/bootstrap-select.min.js"></script>
 
     <script src="{% get_static_prefix %}js/main.js"></script>
+    <script src="{% get_static_prefix %}js/my_main.js"></script>
+
+    <script>
+        let form = document.getElementById('login-form')
+        form.addEventListener('submit', async e => {
+            e.preventDefault()
+            let url = '/auth-api/login'
+            let formdata = new FormData(form)
+            let res_json = await create_model_instance(url, formdata)
+        })
+    </script>
 
 </body>
 

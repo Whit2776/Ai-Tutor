@@ -3,7 +3,7 @@ from login.api import views
 
 urlpatterns = [
   path('sign-up', views.sign_up,),
-  path('login', views.login),
+  path('login', views.log_in),
   path('log-out', views.log_out),
   path('set-password/<str:link>/<str:token>', views.set_password),
 ]
