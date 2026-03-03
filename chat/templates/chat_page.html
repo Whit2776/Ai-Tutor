@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHAT</title>
+    <style>
+      
+      .hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 500px){
+
+        main{max-height: 93vh}
+
+        .profile-panel{
+          position: fixed; 
+          width: 100%;
+          z-index: 10;
+          top: 0;
+          right: -100%;
+          transition: right 0.3s linear;
+        }
+
+        .show-profile .profile-panel{
+          right: 0;
+          height: 100%;
+        }
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root{
+        --primary: #f6f6f6ff;
+        --sent-bubble-bg: #196744ff;
+        --sent-bubble-text: #e4e2e2d9;
+        --sent-bubble-border: #032b4539;
+      }
+
+      body {
+        max-height: 100vh;
+        font-family: system-ui, sans-serif;
+        overflow: hidden;
+        background: url('{% static '{% get_static_prefix %}a.jpg' %}');
+        background-repeat: no-repeat; 
+        background-attachment: fixed;
+        background-size: cover;
+      }
+
+      body.show-profile{
+        display: grid;
+        grid-template-columns: 1fr 360px;
+      }
+
+      /* =========================
+        HEADER
+      ========================= */
+      #header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 3.5rem;
+        background: var(--primary);
+        flex-shrink: 0;
+      }
+
+      #header .chat-info {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        cursor: pointer;
+        height: 100%;
+        transition: background 0.5s linear;
+      }
+
+      #header .chat-info:hover{
+        background: #d0d0d0ff;
+      }
+
+      .chat-info img {
+        width: 045px;
+        height: 045px;
+        border-radius: 50%;
+      }
+
+      /* =========================
+        MAIN / MESSAGES
+      ========================= */
+      main {
+        backdrop-filter: blur(2px);
+        display: flex;
+        flex-flow: column nowrap;
+        height: 100vh;
+      }
+
+      .messages-wrapper {
+        height: 100%;
+        overflow-x: hidden;
+      }
+
+      .messages-wrapper::-webkit-scrollbar, .messages-container::-webkit-scrollbar{display: none;}
+
+      .messages-container {
+        height: 100%;
+        overflow-y: auto;
+        padding: 0.5rem;
+        scroll-behavior: smooth;
+        background: transparent;
+        overflow-x: hidden;
+      }
+
+      .message-wrapper{
+        margin: 0.25rem 0rem;
+        display: flex;
+        flex-flow: column nowrap;
+        width: 100%;
+        transform: translateX(0);
+        transition: transform 0.2s ease;
+      }
+
+      .received .message-content{
+        flex-flow: row-reverse nowrap;
+        margin-right: auto;
+      }
+
+      .message-content{
+        display: flex;
+        align-items: flex-end;
+      }
+      .sent .message-content {
+        margin-left: auto;
+      }
+
+      .sender{
+        font-size: 0.5rem;
+        text-align: left;
+      }
+
+      /* =========================
+        MESSAGE BUBBLE
+      ========================= */
+      .message-container {
+        display: flex;
+        flex-direction: column;
+        padding: 0.35rem 0.45rem;
+        border-radius: 10px 0px;
+        border: 0.5px solid;
+        max-width: 500px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        transition: width 0.3s linear;
+      }
+
+
+
+      .message-container img,
+      .message-container video {
+        max-width: 100%;
+        border-radius: 8px;
+      }
+
+      /* footer inside bubble */
+      .message-container div:last-child {
+        display: flex;
+        gap: 0.25rem;
+        align-items: center;
+        justify-content: flex-end;
+        font-size: 0.55rem;
+        margin-top: 0.2rem;
+      }
+
+      /* =========================
+        SENT / RECEIVED COLORS
+      ========================= */
+      .sent .message-container {
+        background: var(--sent-bubble-bg);
+        color: var(--sent-bubble-text);
+        border-color: var(--sent-bubble-border);
+      }
+
+      .received .message-container {
+        background: #003e62ff;
+        color: #fefefed9;
+        border-color: #23ffcc39;
+      }
+
+      .sent .message-container div:last-child {
+        color: #dededeff;
+      }
+
+      .received .message-container div:last-child {
+        color: #d9d9d9ff;
+      }
+
+      /* =========================
+        FILES INSIDE MESSAGE
+      ========================= */
+      .files {
+        padding: 0.3rem;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.15rem;
+        max-width: 200px;
+        cursor: pointer;
+        position: relative;
+      }
+
+      .file {
+        width: 100%;
+        border-radius: 0.5rem;
+      }
+
+      .files span{
+        padding: 0.25rem;
+        border-radius: 10px;
+        text-align: center;
+        background: #fff;
+        color: #353535ff;
+        position: absolute;
+        left: 100%;
+        top: 75%;
+      }
+
+      /* =========================
+        ICONS
+      ========================= */
+      .icon {
+        font-size: 0.75rem;
+        padding: 0.4rem;
+        background: yellow;
+        border-radius: 50%;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      /* =========================
+        FOOTER
+      ========================= */
+      #footer {
+        min-height: 10%;
+        flex-grow: 1;
+        flex-shrink: 0;
+        position: relative;
+      }
+
+      /* =========================
+        SEND FORM
+      ========================= */
+      #footer form {
+        display: flex;
+        flex-flow: column nowrap;
+        gap: 0.4rem;
+        padding: 0.4rem;
+        height: 100%;
+        background: var(--primary);
+      }
+
+      #footer form .reply-wrapper{
+        transition: max-height 0.3s linear;
+        max-height: 0;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      #footer form .reply-wrapper:has(.reply-preview){
+        max-height: 3rem;
+        overflow-y: auto;
+      }
+
+      #footer form div:last-child{
+        display: flex;
+        flex-flow: row nowrap;
+        align-items: center;
+      }
+
+      #message-input {
+        flex: 1;
+        resize: none;
+        max-height: 6rem;
+        min-height: 2rem;
+        border-radius: 10px;
+        padding: 0.3rem;
+        overflow-y: auto;
+      }
+
+      /* =========================
+        FILE PREVIEW (BEFORE SEND)
+      ========================= */
+      .files-preview-container {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        width: 100%;
+        background: indigo;
+        padding: 0.3rem;
+        visibility: hidden;
+        opacity: 0;
+        transition: opacity 0.25s ease;
+      }
+
+      .files-preview-container.active {
+        visibility: visible;
+        opacity: 1;
+      }
+
+      .files-preview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+      }
+
+      .files-preview img {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+
+      /* =========================
+        REPLY PREVIEW
+      ========================= */
+      .reply-preview {
+        width: 100%;
+        max-height: 3rem;
+        overflow-y: hidden;
+        background: #fafafa41;
+        backdrop-filter: blur(6px);
+        padding: 0.3rem;
+        display: flex;
+        opacity: 1;
+        transition: all 0.3s linear;
+        justify-content: space-between;
+        align-items: center;
+        border-left: 5px solid #fffa68ff;
+      }
+
+      .reply {
+        position: relative;
+        top: 10px;
+        padding: 0.2rem;
+        background: #2e6530ff;
+        backdrop-filter: blur(3px);
+        border-radius: 5px;
+        max-width: 500px;
+      }
+
+      .sent .reply{
+        margin-left: auto;
+      }
+
+      .received .reply{
+        margin-right: auto;
+      }
+
+      /* =========================
+        SMALL SCREENS
+      ========================= */
+      @media (max-width: 600px) {
+        .message-container {
+          max-width: 85%;
+        }
+
+        .files {
+          max-width: 150px;
+        }
+      }
+
+      .slide-in{
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: max(25%, 250px);
+        height: 100%;
+        background: #ffffffff;
+        backdrop-filter: blur(6px);
+        opacity: 0.5;
+        transition: all 0.3s linear;
+        display: flex;
+        flex-flow: column nowrap;
+      }
+
+      .slide-in.active{
+        opacity: 1;
+        right: 0;
+      }
+
+      .slide-in .forward-messages{
+        display: flex;
+        flex-flow: column nowrap;
+        height:80%;
+        overflow: auto;
+      }
+
+      .slide-in form{
+        display: grid;
+        place-content: center;
+        height: 20%;
+      }
+
+      .forward-messages .header{
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0.75rem;
+      }
+
+      .close-btn{
+        display: flex;
+        cursor: pointer;
+        padding: 0.2rem;
+      }
+
+      .close-btn:before,
+      .close-btn:after{
+        content: '';
+        width: 2px;
+        height: 19px;
+        background: black;
+      }
+
+      .close-btn:before{
+        transform: rotate(45deg);
+      }
+
+      .close-btn:after{
+        transform: rotate(315deg);
+        translate: -2px 0px;
+      }
+
+      span.system {
+        display: flex;
+        text-align: center;
+        font-style: italic;
+        font-weight: 500;
+        color: #ffffffff;
+        white-space: nowrap;
+        border-radius: 12px;
+        padding: 6px 12px;
+        margin: 8px 0;
+        font-size: 0.875rem;
+        line-height: 1.4;
+        user-select: none;
+        pointer-events: none;
+        align-items: center;
+        font-family: cursive;
+    }
+
+    .system::before, .system::after{
+      content: '';
+      border-bottom: 2px solid #fff;   
+      width: 100%;
+    }
+
+    #my-modal{
+      display: flex;
+      visibility: hidden;
+      opacity: 0;
+      position: fixed;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      transition: opacity 0.3s linear;
+      backdrop-filter: blur(3px);
+      z-index: 50;
+    }
+
+    #my-modal.active{
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .cards{
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-behavior: smooth;
+      scroll-snap-type: x mandatory;
+      display: flex;
+      position: relative;
+      width: 100%;
+    }
+
+    .cards::-webkit-scrollbar{
+      display: none;
+    }
+
+    .cards button{
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 2.5rem;
+      height: 2.5rem;
+      padding: 0;
+      display: grid;
+      place-content: center;
+      border-radius: 50%;
+      border: none;
+      background: #1abce1ff;
+      color: whitesmoke;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    
+    .cards button.right{right: 2%;}
+    .cards button.left{left: 2%;}
+
+    .card{
+      flex: 0 0 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      scroll-snap-align: center;
+    }
+
+    .card img{
+      width: min(90%, 400px);
+      height: auto;
+      object-fit: contain;
+    }
+
+    /* PROFILE PANEL */
+    .profile-panel {
+      grid-area: 2/3/1/2;
+      background: #ffffff;
+      box-shadow: -10px 0 30px rgba(0,0,0,.08);
+      transition: transform 0.25s ease;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      transform: translateX(100%);
+      transition: transform 0.3s ease, opacity 0.2s linear;
+      max-height: 100vh;
+    }
+
+    .show-profile .profile-panel {
+      transform: translateX(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .profile-header {
+      padding: 1.5rem 1rem;
+      text-align: center;
+      border-bottom: 1px solid #e5e7eb;
+      position: relative;
+    }
+
+    .profile-header button {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      border: none;
+      background: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .profile-header img {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      margin-bottom: .75rem;
+    }
+
+    .profile-header h3 {
+      margin-bottom: .25rem;
+    }
+
+    .profile-header p {
+      font-size: .9rem;
+      color: #22c55e;
+    }
+
+    .section {
+      padding: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .section h4 {
+      margin-bottom: .75rem;
+      font-size: .9rem;
+      color: #374151;
+    }
+
+    .media-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .5rem;
+    }
+
+    .media-grid div {
+      background: #d1d5db;
+      height: 70px;
+      border-radius: .5rem;
+    }
+
+    .group {
+      padding: .5rem 0;
+      font-size: .9rem;
+      color: #374151;
+    }
+
+    .actions button {
+      width: 100%;
+      padding: .75rem;
+      margin-top: .5rem;
+      border-radius: .5rem;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .block {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .report {
+      background: #fef3c7;
+      color: #92400e;
+    }
+  
+
+    </style>
+    
+  </head>
+  <body>
+    <div class="hidden">
+      <div class="card carousel-card">
+        <img src="" class='image' >
+      </div>
+    </div>
+    
+
+    <style>
+      .disabled{opacity: 0.7;pointer-events: none;}
+    </style>
+    <div class="search hidden"></div>
+    <div class="slide-in-form hidden"></div>
+
+    <main>
+      
+    <div id="my-modal" class='my-modal'>
+      <div class="cards">
+        <button class = 'left'><</button>
+        <button class = 'right'>></button>
+      </div>
+    </div>
+      <div id="header">
+        <div class="delete-multiple hidden" ></div>
+        <div id='chat-link' class="hidden ">{{chat.link}}</div>
+        <div id = 'id' class='hidden'>{{member.id}}</div>
+        <div class="chat-info">
+          {%if chat.is_group%}
+          <img src="{{chat.group_picture.url}} " alt="">
+          <h4>{{chat.name}}</h4>
+            
+          {%else%} 
+          <img src="{{chat.other_user.picture.url}}  " alt="">
+          <h4>{{chat.other_user.name}}</h4>
+          {%endif%}
+        </div>
+      </div>
+      <div class="messages-wrapper">
+        <div class="messages-container">
+          
+        </div>
+      </div>
+      
+      <div id="footer">
+        <div class="files-preview-container">
+          <div class="files-preview">
+
+          </div>
+        </div>
+        <form id = 'post-message' action="" class="send-message-form submit-form">
+          {% csrf_token %}
+          <div class="reply-wrapper">
+
+          </div>
+          <div>
+            {% if chat.is_group %}
+              <input type="hidden" name = 'is_group' value = 'True'>
+            {% endif %}
+            <textarea name="message" id="message-input" placeholder='Message'></textarea> 
+            <div class= 'buttons'>
+              <button type = 'submit' class='send '>Send</button>
+              <button type="button" class='add-files-icon'>Add Files</button>
+              <input type = 'file' class='hidden add-files-input' name = 'files' multiple accept='*/*'>
+              <input type="hidden" id="message-type" name='message-type'>
+              <input type="hidden" id="reply-to-id" name='reply_to_id'>
+            </div>
+          </div>
+        </form>
+      </div>
+    </main>
+
+    <div class="profile-panel" id="profilePanel">
+      <div class="profile-header">
+        <button id="closeProfile">←</button>
+        <img src="{{chat.other_user.picture.url}}">
+        <h3>{{chat.other_user.name}}</h3>
+        <p>Online</p>
+      </div>
+
+      <div class="sections">
+        <div class="section media">
+          <style>
+            .sections{overflow-y: auto;}
+            .hidden{display: none;}
+            .section.media .header{display: flex; flex-flow: row nowrap; gap: 0.5rem; align-items: center;position: relative;}
+            .section.media .down-icon{opacity: 0; transform: rotate(0deg) translateY(-50%); transition: opacity 0.3s linear, transform 0.3s linear;}
+
+            .section.media .header .categories{position: absolute; top: -20%; opacity: 0; background: #fff; border-radius: 3px; font-family: cursive; color: #a5a5a5ff; transition: top 0.3s linear , opacity 0.3s linear, transform 0.3s linear; font-size: 0.65rem; display: flex; align-items: center; justify-content: space-evenly; width: 100%; padding: 0.25rem; }
+
+            .section.media .header .category{transition: transform 0.3s linear;}
+            .section.media .header .category:hover{transform: scale(1.3);}
+
+            .section.media .header.active .categories{top: 102%; opacity: 1; transform: scale(0.9)}
+            
+
+            .section.media .header:hover{cursor: pointer;}
+
+            .section.media .header.active .down-icon{opacity: 1; transform: rotate(180deg)}
+
+            .media-grid{max-height: 0; opacity: 0; overflow: hidden; transition: opacity 0.3s linear, max-height 0.3s linear}
+             .section.media .header.active + .media-grid{opacity: 1; max-height: 500px; overflow-y:auto ; }
+
+            .media-grid img{ width: 100%; max-height: 100px }
+            
+          </style>
+          <div class = 'header'>
+            <h4>Media, links &amp; docs</h4>
+            <span class='down-icon'><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z"/></svg></span>
+            <div class='categories'><span class='category'>Pictures</span><span class='category'>Music</span><span class='category'>Video</span><span class='category'>Docs</span><span class='category'>Audio Recordings</span></div>
+          </div>
+          <div class="media-grid">
+            <div></div><div></div><div></div>
+            <div></div><div></div><div></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h4>Groups in common</h4>
+          
+          {% for group in groups %}
+          <div class="group">{{group.name}}</div>
+          {% endfor %}
+            
+        </div>
+
+        <div class="section actions">
+          <button class="block">Block user</button>
+          <button class="report">Report user</button>
+        </div>
+    </div>
+    </div>
+
+    <!--BUBBLE-->
+    <style>
+      .bubble-action{
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.75s ease;
+      }
+
+      .bubble-action.active{
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .message-container{
+        cursor: grab;
+      }
+    </style>
+    <div class='hidden'>
+      <div class="message-wrapper">
+        <div class="hidden id"></div>
+        <div class = 'message-content'>
+          <svg class="bubble-action icon forward-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="m640-280-57-56 184-184-184-184 57-56 240 240-240 240ZM80-200v-160q0-83 58.5-141.5T280-560h247L383-704l57-56 240 240-240 240-57-56 144-144H280q-50 0-85 35t-35 85v160H80Z"></path></svg>
+          
+          <svg class="bubble-action icon delete-icon" style='background: #ff1414ff;' xmlns="http://www.w3.org/2000/svg" height='25px' viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
+
+          <div class ='message-container'>
+            
+            {% if chat.is_group %}
+              <span class="sender"></span>
+            {% endif %}
+              
+            <div class="message"> </div>
+            <div class='message-stamp'>
+              <div class='time-stamp'> </div>
+              <div class='read-status'> </div>
+            </div>
+          </div>
+          <svg class ='bubble-action icon reply-icon' xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="M760-200v-160q0-50-35-85t-85-35H273l144 144-57 56-240-240 240-240 57 56-144 144h367q83 0 141.5 58.5T840-360v160h-80Z"/></svg>
+        </div>
+      </div>
+    </div>
+    <!--BUBBLE END-->
+
+    <!--SLIDE-INS-->
+    <div class="slide-in" id = 'forward-message-modal'>
+      <div class="forward-messages">
+        <div class='header'>
+          <input type="text" id='search-chats' placeholder='search'>
+            <span class="close-btn"></span>
+        </div>
+        <div class="forward-chats">
+          <style>
+            :root{--text-muted: #7c7c7cff;}
+            .highlight{background: #3cfc42ff;}
+            .text-muted{font-size: 0.65rem; color: var(--text-muted)}
+            .disapear{scale: 0; opacity: 0; max-height: 0;}
+          </style>
+          {% for chat in chats %}
+
+          <div class="name" data-link='{{chat.link}}'>{{chat.other_user.name}}</div>
+            
+          {% endfor %}
+            
+        </div>
+      </div>
+      <form action="" id='forward-messages'>
+        {% csrf_token %}
+        <input type="hidden" name = 'message-type' value ='forward'>
+        <button type="submit">Forward</button>
+      </form>
+    </div>
+
+
+    <script src="{% static 'chat.js' %}"></script>
+    <script>
+      render_messages()
+    </script>
+    <script>
+      post_message()
+    </script>
+    <script>
+      document.addEventListener('DOMContentLoaded', async e => {setInterval(get_message, 3000)})
+    </script>
+    <script>
+      attach_preview_files()
+    </script>
+    <script>
+      select_chats()
+    </script>
+    <script>
+      submit_forward_form()
+    </script>
+    <script>
+      chat_profile_js()
+    </script>
+  </body>
+</html>

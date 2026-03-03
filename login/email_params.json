@@ -1,0 +1,39 @@
+{
+  "templates": [
+    {
+      "id": 1,
+      "name": "Family Created",
+      "params": [
+        "family_name",
+        "set_up"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Broadcast signup",
+      "params": [
+        "family_name",
+        "set_up",
+        "company_name"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Set Password",
+      "params": [
+        "user_name",
+        "company_name",
+        "member_id",
+        "set_up"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Membership Request Received",
+      "params": [
+        "family_name",
+        "user_name"
+      ]
+    }
+  ]
+}

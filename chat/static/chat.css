@@ -1,0 +1,7 @@
+.hidden{
+  display: flex;
+}
+
+.clickable{
+  cursor: pointer;
+}

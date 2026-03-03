@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  {% load static %}
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- [Favicon] icon -->
+    <!-- [Google Font : Public Sans] icon -->
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet" />
+    <!-- [phosphor Icons] https://phosphoricons.com/ -->
+    <link rel="stylesheet" href="{% get_static_prefix %}assets/fonts/phosphor/duotone/style.css" />
+    <!-- [Tabler Icons] https://tablericons.com -->
+    <link rel="stylesheet" href="{% get_static_prefix %}assets/fonts/tabler-icons.min.css" />
+    <!-- [Feather Icons] https://feathericons.com -->
+    <link rel="stylesheet" href="{% get_static_prefix %}assets/fonts/feather.css" />
+    <!-- [Font Awesome Icons] https://fontawesome.com/icons -->
+    <link rel="stylesheet" href="{% get_static_prefix %}assets/fonts/fontawesome.css" />
+    <!-- [Material Icons] https://fonts.google.com/icons -->
+    <link rel="stylesheet" href="{% get_static_prefix %}assets/fonts/material.css" />
+    <!-- [Template CSS Files] -->
+    <link rel="stylesheet" href="{% get_static_prefix %}assets/{% get_static_prefix %}style.css" id="main-style-link" />
+    <link rel="stylesheet" href="{% get_static_prefix %}assets/{% get_static_prefix %}style-preset.css" />
+    <link rel="stylesheet" href="{% static 'assets/{% get_static_prefix %}dataTables.min.css' %}">
+    <link rel="stylesheet" href="{% static '{% get_static_prefix %}style.css' %}">
+  </head>
+  <body>
+    {% include 'components/nav.html' %}
+    <style>
+      td img{
+        width: clamp(100px, 2.5vw, 300px);
+        height: auto;
+        border-radius: 10px;
+      }
+
+    </style>
+
+    <div class="pc-container">
+      <div class="pc-content">
+        <div class="table-wrapper">
+          <div class="table-container">
+            <table id='family-members'>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Member</th>
+                  <th>Name</th>
+                  <th>Subtree</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for member in members  %}
+                <tr>
+                  <td>{{forloop.counter}}</td>
+                  <td><img src="{{member.picture.url}}" alt=""></td>
+                  <td><a href="">{{member.name}}</a></td>
+                  <td>{{member.subtree.name|default:'Awidi'}}</td>
+                  <td>
+                    <div class="actions">
+                      
+                      {% if member.is_active == False or member.status != 'request'%}
+                      <form action="" class = 'chat'>
+                        {% csrf_token %}
+                        <input type="hidden" name='family-member' value='{{member.member_id}}'>
+                        <button class="" type='submit'>Send Message</button>
+                      </form>
+                      {% endif %}
+                        
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script data-cfasync="false" src="../../../cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="{% get_static_prefix %}assets/{% get_static_prefix %}plugins/popper.min.js"></script>
+    <script src="{% get_static_prefix %}assets/{% get_static_prefix %}plugins/simplebar.min.js"></script>
+    <script src="{% get_static_prefix %}assets/{% get_static_prefix %}plugins/bootstrap.min.js"></script>
+    <script src="{% get_static_prefix %}assets/{% get_static_prefix %}plugins/i18next.min.js"></script>
+    <script src="{% get_static_prefix %}assets/{% get_static_prefix %}plugins/i18nextHttpBackend.min.js"></script>
+    <script src="{% get_static_prefix %}assets/{% get_static_prefix %}icon/custom-font.js"></script>
+    <script src="{% get_static_prefix %}assets/{% get_static_prefix %}script.js"></script>
+    <script src="{% get_static_prefix %}assets/{% get_static_prefix %}theme.js"></script>
+    <script src="{% get_static_prefix %}assets/{% get_static_prefix %}multi-lang.js"></script>
+    <script src="{% get_static_prefix %}assets/{% get_static_prefix %}plugins/feather.min.js"></script>
+
+      
+    <script>
+      layout_change('light');
+    </script>
+      
+    <script>
+      layout_sidebar_change('light');
+    </script>
+      
+    <script>
+      change_box_container('false');
+    </script>
+    
+    <script>
+      layout_caption_change('true');
+    </script>
+      
+    <script>
+      layout_rtl_change('false');
+    </script>
+    
+    <script>
+      preset_change('preset-1');
+    </script>
+    
+    <script src="{% static 'assets/{% get_static_prefix %}jQuery.js' %}"></script>
+    <script src="{% static 'assets/{% get_static_prefix %}dataTables.js' %}"></script>
+    <script src="{% static '{% get_static_prefix %}main.js' %}"></script>
+    <script>
+      
+    $("#family-members").DataTable({
+      pageLength: 10,
+      order: [[0, 'desc']],
+      responsive: true
+    });
+    </script>
+    
+    <script>
+      let forms = document.querySelectorAll('.chat')
+      let url = '/chat-api/create-chat'
+      forms.forEach(form => {
+        form.addEventListener('submit', async e => {
+          e.preventDefault()
+          let formdata = new FormData(form)
+          let res = await fetch(url, {method:'post', body:formdata})
+          let data = await res.json()
+
+          console.log(data)
+        })
+      })
+    </script>
+  </body>
+</html>
