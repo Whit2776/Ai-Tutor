@@ -100,8 +100,7 @@ def log_in(request):
   person = Person.objects.filter(user_name = user_name).first()
   
   if not person or not check_password(password, person.password):
-    print('Pass word not correct')
-    return Response({'success':False}, status=status.HTTP_404_NOT_FOUND)
+    return Response({'success':False, 'message':'Credentials do not match'}, status=status.HTTP_404_NOT_FOUND)
 
   login(request, person)
   return Response({'success': True})
